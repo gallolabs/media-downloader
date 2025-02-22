@@ -16,12 +16,20 @@
       <label for="inputUrls" class="sr-only">Media page Url(s)</label>
       <textarea id="inputUrls" name="urls" class="form-control" placeholder="Media page Url(s)" required autofocus></textarea>
       <div class="checkbox mb-3 mt-2">
-          <label><input type="checkbox" name="onlyAudio" value="true" /> Only audio</label>
-          <span style="margin: 0px 10px;">|</span> <label><input type="checkbox" name="ignorePlaylists" value="true" checked /> Ignore Playlists</label>
+
+          <label><input type="checkbox" name="ignorePlaylists" value="true" checked /> Ignore Playlists</label>
           <span style="margin: 0px 10px;">|</span> <label>Video Quality <select name="videoQuality">
             <option value="best">Best</option>
             <option value="fhd" selected>Full HD</option>
             <option value="hd">HD</option>
+          </select></label>
+          <br/>
+          <label><input type="checkbox" name="onlyAudio" value="true" /> Only audio</label>
+          <span style="margin: 0px 10px;">|</span> <label>Sound Quality <select name="soundQuality" disabled>
+            <option value="5">MP3</option>
+            <option value="6" selected>CD</option>
+            <option value="7">Hi-Res Max 96</option>
+            <option value="27">Hi-Res Max 192</option>
           </select></label>
 
       </div>
@@ -45,7 +53,10 @@
         document.querySelector('select[name="videoQuality"]').disabled = this.checked
       }
 
+      const soundQualityEl = document.querySelector('select[name="soundQuality"]')
+
       textarea.oninput = () => {
+        soundQualityEl.disabled = !textarea.value.includes('qobuz.com')
         textarea.style.height = (textarea.scrollHeight + scrollOffsetDiff) + 'px'
       }
 
@@ -136,12 +147,13 @@
         const onlyAudio = document.querySelector('input[name="onlyAudio"]').checked
         const ignorePlaylists = document.querySelector('input[name="ignorePlaylists"]').checked
         const videoQuality = document.querySelector('select[name="videoQuality"]').value
+        const soundQuality = soundQualityEl.disabled ? null : soundQualityEl.value
 
         try {
           const response = await fetch('/download', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ urls, onlyAudio, ignorePlaylists, videoQuality })
+            body: JSON.stringify({ urls, onlyAudio, ignorePlaylists, videoQuality, soundQuality })
           })
 
           if (!response.ok) {
