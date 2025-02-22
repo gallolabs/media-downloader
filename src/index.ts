@@ -29,9 +29,10 @@ interface Download {
     autoBrowserDownload: boolean
     doneOrCanceledAt?: Date
     videoQuality: string
+    soundQuality: string | null
 }
 
-type DownloadRequest = Pick<Download, 'urls' | 'onlyAudio' | 'ignorePlaylists' | 'autoBrowserDownload' | 'videoQuality'>
+type DownloadRequest = Pick<Download, 'urls' | 'onlyAudio' | 'ignorePlaylists' | 'autoBrowserDownload' | 'videoQuality' | 'soundQuality'>
 
 const downloads: Download[] = []
 const downloadManager = new JobsRunner({logger})
@@ -66,42 +67,64 @@ const downloadManager = new JobsRunner({logger})
                                     try {
                                         fs.mkdirSync(workdir)
 
-                                        const format = (() => {
-                                            if (download.onlyAudio) {
-                                                // I can't accept bad audio !
-                                                return
-                                            }
-                                            switch (download.videoQuality) {
-                                                case 'best':
-                                                    return 'bestvideo*+bestaudio/best'
-                                                case 'fhd':
-                                                    return 'bv*[height<=1080]+ba/b[height<=1080] / wv*+ba/w'
-                                                case 'hd':
-                                                    return 'bv*[height<=720]+ba/b[height<=720] / wv*+ba/w'
-                                                // Less is useless !!!! Better only listen :)
-                                                default:
-                                                    throw new Error('Unknown videoQuality')
-                                            }
-                                        })()
+                                        const isQobuz = download.urls.some(url => url.includes('quobuz.com'))
 
-                                        const downloadProcess = runProcess({
-                                            cmd: 'yt-dlp',
-                                            args: [
-                                                ...download.urls,
-                                                ...download.onlyAudio
-                                                    ? ['-x', '--embed-thumbnail', '--embed-subs', '--convert-subs', 'srt', '--sub-langs', 'all']
-                                                    : ['--embed-subs', '--sub-format', 'best', '--sub-langs', 'all'],
-                                                ...format ? ['-f', format] : [],
-                                                ...download.ignorePlaylists ? ['--no-playlist'] : [],
-                                                '--abort-on-error',
-                                                '--embed-metadata'
-                                            ],
-                                            logger,
-                                            cwd: workdir,
-                                            abortSignal
-                                        })
+                                        if (isQobuz) {
 
-                                        await once(downloadProcess, 'finish')
+                                            const downloadProcess = runProcess({
+                                                cmd: 'quobuz-dl',
+                                                args: [
+                                                    ...download.urls,
+                                                    '-d', '.',
+                                                    '--embed-art',
+                                                    '-q', download.soundQuality
+                                                ],
+                                                logger,
+                                                cwd: workdir,
+                                                abortSignal
+                                            })
+
+                                            await once(downloadProcess, 'finish')
+
+                                        } else {
+
+                                            const format = (() => {
+                                                if (download.onlyAudio) {
+                                                    // I can't accept bad audio !
+                                                    return
+                                                }
+                                                switch (download.videoQuality) {
+                                                    case 'best':
+                                                        return 'bestvideo*+bestaudio/best'
+                                                    case 'fhd':
+                                                        return 'bv*[height<=1080]+ba/b[height<=1080] / wv*+ba/w'
+                                                    case 'hd':
+                                                        return 'bv*[height<=720]+ba/b[height<=720] / wv*+ba/w'
+                                                    // Less is useless !!!! Better only listen :)
+                                                    default:
+                                                        throw new Error('Unknown videoQuality')
+                                                }
+                                            })()
+
+                                            const downloadProcess = runProcess({
+                                                cmd: 'yt-dlp',
+                                                args: [
+                                                    ...download.urls,
+                                                    ...download.onlyAudio
+                                                        ? ['-x', '--embed-thumbnail', '--embed-subs', '--convert-subs', 'srt', '--sub-langs', 'all']
+                                                        : ['--embed-subs', '--sub-format', 'best', '--sub-langs', 'all'],
+                                                    ...format ? ['-f', format] : [],
+                                                    ...download.ignorePlaylists ? ['--no-playlist'] : [],
+                                                    '--abort-on-error',
+                                                    '--embed-metadata'
+                                                ],
+                                                logger,
+                                                cwd: workdir,
+                                                abortSignal
+                                            })
+
+                                            await once(downloadProcess, 'finish')
+                                        }
 
                                         const files = fs.readdirSync(workdir)
                                         const needZip = files.length > 1
