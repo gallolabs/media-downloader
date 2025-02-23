@@ -95,6 +95,9 @@ const qobuzCreds = {
 
                                             await once(downloadProcess, 'finish')
 
+                                            // Bad qobuz lib
+                                            await fsExtra.remove(workdir + '/cover.jpg')
+
                                         } else {
 
                                             const format = (() => {

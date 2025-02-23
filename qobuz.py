@@ -14,8 +14,10 @@ logging.basicConfig(
 qobuz = QobuzDL(
 	quality=int(os.environ['QUALITY']),
 	embed_art=True,
+	no_cover=False,
 	directory='.',
-	folder_format='.'
+	folder_format='.',
+	cover_og_quality=True
 )
 
 print('get_tokens')
