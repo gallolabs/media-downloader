@@ -36,6 +36,10 @@ type DownloadRequest = Pick<Download, 'urls' | 'onlyAudio' | 'ignorePlaylists' |
 
 const downloads: Download[] = []
 const downloadManager = new JobsRunner({logger})
+const qobuzCreds = {
+    email: process.env.QOBUZ_EMAIL,
+    password: process.env.QOBUZ_PASSWORD
+}
 
 ;(async () => {
     const httpServer = new HttpServer({
@@ -58,7 +62,7 @@ const downloadManager = new JobsRunner({logger})
                             status: 'QUEUE',
                             youtubeJob: new Job({
                                 id: {
-                                    operation: 'yt-download',
+                                    operation: 'download',
                                     trigger: null,
                                     subjects: {uid: uid}
                                 },
@@ -67,21 +71,26 @@ const downloadManager = new JobsRunner({logger})
                                     try {
                                         fs.mkdirSync(workdir)
 
-                                        const isQobuz = download.urls.some(url => url.includes('quobuz.com'))
+                                        const isQobuz = download.urls.some(url => url.includes('qobuz.com'))
 
                                         if (isQobuz) {
 
+                                            if (!download.soundQuality) {
+                                                throw new Error('Missing soundQuality')
+                                            }
+
                                             const downloadProcess = runProcess({
-                                                cmd: 'quobuz-dl',
-                                                args: [
-                                                    ...download.urls,
-                                                    '-d', '.',
-                                                    '--embed-art',
-                                                    '-q', download.soundQuality
-                                                ],
+                                                cmd: process.cwd() + '/qobuz.py',
+                                                args: download.urls,
                                                 logger,
                                                 cwd: workdir,
-                                                abortSignal
+                                                abortSignal,
+                                                env: {
+                                                    EMAIL: qobuzCreds.email!,
+                                                    PASSWORD: qobuzCreds.password!,
+                                                    QUALITY: download.soundQuality,
+                                                    HOME: '/tmp'
+                                                }
                                             })
 
                                             await once(downloadProcess, 'finish')
