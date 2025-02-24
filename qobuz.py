@@ -4,12 +4,6 @@ from qobuz_dl.core import QobuzDL
 from json import dumps
 import os
 import sys
-import logging
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(message)s",
-)
 
 qobuz = QobuzDL(
 	quality=int(os.environ['QUALITY']),
@@ -17,7 +11,8 @@ qobuz = QobuzDL(
 	no_cover=False,
 	directory='.',
 	folder_format='.',
-	cover_og_quality=True
+	cover_og_quality=True,
+	track_format='{artist} - {tracktitle} [{bit_depth}B-{sampling_rate}kHz]'
 )
 
 print('get_tokens')

@@ -4,6 +4,7 @@ import HttpServer from '@gallofeliz/js-libs/http-server'
 import loadConfig from '@gallofeliz/js-libs/config'
 import { Job, JobsRunner } from '@gallofeliz/js-libs/jobs'
 import { handleExitSignals } from '@gallofeliz/js-libs/exit-handle'
+import { cloneDeep } from 'lodash'
 const { once } = require('events')
 const tmpdir = require('os').tmpdir()
 const config = loadConfig<Config, Config>({})
@@ -11,6 +12,22 @@ const logger = createLogger(config.loglevel as any || 'info')
 const uuid4 = require('uuid').v4
 const fs = require('fs')
 const fsExtra = require('fs-extra')
+
+function fixLogger(logger: any) {
+    // @ts-ignore
+    const loggerLog = logger.log.bind(logger)
+    const loggerChild = logger.child.bind(logger)
+    // @ts-ignore
+    logger.log = (a, b, c) => loggerLog(a, b, cloneDeep(c))
+    // @ts-ignore
+    logger.child = (a) => {
+        const c = loggerChild(a)
+        fixLogger(c)
+        return c
+    }
+}
+
+fixLogger(logger)
 
 interface Config {
     loglevel?: string
@@ -29,17 +46,17 @@ interface Download {
     autoBrowserDownload: boolean
     doneOrCanceledAt?: Date
     videoQuality: string
-    soundQuality: string | null
+    qobuz?: {
+        soundQuality: string
+        email: string
+        password: string
+    }
 }
 
-type DownloadRequest = Pick<Download, 'urls' | 'onlyAudio' | 'ignorePlaylists' | 'autoBrowserDownload' | 'videoQuality' | 'soundQuality'>
+type DownloadRequest = Pick<Download, 'urls' | 'onlyAudio' | 'ignorePlaylists' | 'autoBrowserDownload' | 'videoQuality' | 'qobuz'>
 
 const downloads: Download[] = []
 const downloadManager = new JobsRunner({logger})
-const qobuzCreds = {
-    email: process.env.QOBUZ_EMAIL,
-    password: process.env.QOBUZ_PASSWORD
-}
 
 ;(async () => {
     const httpServer = new HttpServer({
@@ -75,8 +92,8 @@ const qobuzCreds = {
 
                                         if (isQobuz) {
 
-                                            if (!download.soundQuality) {
-                                                throw new Error('Missing soundQuality')
+                                            if (!download.qobuz) {
+                                                throw new Error('Missing qobuz opts')
                                             }
 
                                             const downloadProcess = runProcess({
@@ -86,9 +103,9 @@ const qobuzCreds = {
                                                 cwd: workdir,
                                                 abortSignal,
                                                 env: {
-                                                    EMAIL: qobuzCreds.email!,
-                                                    PASSWORD: qobuzCreds.password!,
-                                                    QUALITY: download.soundQuality,
+                                                    EMAIL: download.qobuz.email,
+                                                    PASSWORD: download.qobuz.password,
+                                                    QUALITY: download.qobuz.soundQuality,
                                                     HOME: '/tmp'
                                                 }
                                             })
