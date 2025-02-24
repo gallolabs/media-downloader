@@ -16,9 +16,9 @@ ADD src tsconfig.json ./
 
 RUN npx tsc
 
-ADD index.html logo_w300.jpeg qobuz.py node_modules/bootstrap/dist/css/bootstrap.min.css ./
+ADD src/index.html logo_w300.jpeg src/qobuz.py node_modules/bootstrap/dist/css/bootstrap.min.css ./
 
-COPY supervisord.conf /etc/supervisor.d/supervisord.ini
+COPY src/supervisord.conf /etc/supervisor.d/supervisord.ini
 
 CMD ["supervisord", "-c", "/etc/supervisor.d/supervisord.ini"]
 
