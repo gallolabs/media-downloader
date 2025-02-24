@@ -1,8 +1,10 @@
-FROM node:lts-alpine3.18
+FROM node:lts-alpine3.21
 
 RUN apk add --no-cache tzdata ffmpeg supervisor && wget -O /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 
-RUN apk add --no-cache py3-pip && python3 -m pip install mutagen
+RUN apk add --no-cache py3-pip mutagen
+
+RUN python3 -m pip install qobuz-dl --break-system-packages
 
 WORKDIR /app
 
@@ -14,9 +16,7 @@ ADD src tsconfig.json ./
 
 RUN npx tsc
 
-RUN ls -la
-
-ADD index.html logo_w300.jpeg ./
+ADD index.html logo_w300.jpeg qobuz.py ./
 
 COPY supervisord.conf /etc/supervisor.d/supervisord.ini
 

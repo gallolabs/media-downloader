@@ -20,5 +20,8 @@
     "@gallofeliz/js-libs": "https://github.com/gallofeliz/js-libs/releases/download/v0.1.5/gallofeliz-js-libs-0.1.5.tgz",
     "fs-extra": "^10.0.1",
     "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5"
   }
 }

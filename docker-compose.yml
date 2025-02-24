@@ -6,5 +6,7 @@ services:
       context: .
     environment:
         - TZ=Europe/Paris
+        - QOBUZ_EMAIL=aa@bb.cc
+        - QOBUZ_PASSWORD=abc
     ports:
       - "8080:80"

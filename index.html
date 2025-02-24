@@ -16,16 +16,32 @@
       <label for="inputUrls" class="sr-only">Media page Url(s)</label>
       <textarea id="inputUrls" name="urls" class="form-control" placeholder="Media page Url(s)" required autofocus></textarea>
       <div class="checkbox mb-3 mt-2">
-          <label><input type="checkbox" name="onlyAudio" value="true" /> Only audio</label>
-          <span style="margin: 0px 10px;">|</span> <label><input type="checkbox" name="ignorePlaylists" value="true" checked /> Ignore Playlists</label>
+
+          <label><input type="checkbox" name="ignorePlaylists" value="true" checked /> Ignore Playlists</label>
           <span style="margin: 0px 10px;">|</span> <label>Video Quality <select name="videoQuality">
             <option value="best">Best</option>
             <option value="fhd" selected>Full HD</option>
             <option value="hd">HD</option>
           </select></label>
+          <span style="margin: 0px 10px;">|</span>
+          <label><input type="checkbox" name="onlyAudio" value="true" /> Only audio</label>
+          <fieldset id="qobuz-opts" class="d-none">
+            <legend>Qobuz :</legend>
+            <label>Sound Quality <select name="qobuzSoundQuality">
+              <option value="5">MP3</option>
+              <option value="6" selected>CD</option>
+              <option value="7">Hi-Res Max 96</option>
+              <option value="27">Hi-Res Max 192</option>
+            </select></label>
+            <br/>
+            <label>Email <input type="input" name="qobuzEmail" value="" /></label>
+            <span style="margin: 0px 10px;">|</span>
+            <label>Password <input type="password" name="qobuzPassword" value="" /></label>
+
+          </fieldset>
 
       </div>
-      <button class="btn btn-lg btn-primary btn-block" id="submit">Download</button>
+      <button class="btn btn-lg btn-primary btn-block" id="submit" disabled>Download</button>
 
       <div id="list" style="margin-top: 30px">
         <table style="display: none" class="table">
@@ -38,6 +54,7 @@
       // Sorry, I did random code and I don't really not what I do
       // It works on GG Chrome ahah, we're wishing for the best
       const textarea = document.querySelector('#inputUrls')
+      const submitEl = document.querySelector('#submit')
       const scrollOffsetDiff = Math.abs(textarea.scrollHeight - textarea.offsetHeight)
       textarea.style.minHeight = textarea.offsetHeight + 'px'
 
@@ -45,7 +62,15 @@
         document.querySelector('select[name="videoQuality"]').disabled = this.checked
       }
 
+      const qobuzFieldset = document.querySelector('#qobuz-opts')
+
       textarea.oninput = () => {
+        submitEl.disabled = !textarea.value.trim()
+        if (textarea.value.includes('qobuz.com')) {
+          qobuzFieldset.classList.remove('d-none')
+        } else {
+          qobuzFieldset.classList.add('d-none')
+        }
         textarea.style.height = (textarea.scrollHeight + scrollOffsetDiff) + 'px'
       }
 
@@ -131,17 +156,27 @@
 
       setInterval(refreshList, 1000 * 10)
 
-      document.querySelector('#submit').onclick = async function () {
+      submitEl.onclick = async function () {
         const urls = document.querySelector('#inputUrls').value.split('\n').map(v => v.trim()).filter(v => v)
         const onlyAudio = document.querySelector('input[name="onlyAudio"]').checked
         const ignorePlaylists = document.querySelector('input[name="ignorePlaylists"]').checked
         const videoQuality = document.querySelector('select[name="videoQuality"]').value
 
+        const params = { urls, onlyAudio, ignorePlaylists, videoQuality }
+
+        if (!qobuzFieldset.classList.contains('d-none')) {
+          params['qobuz'] = {
+            soundQuality: document.querySelector('select[name="qobuzSoundQuality"]').value,
+            email: document.querySelector('input[name="qobuzEmail"]').value,
+            password: document.querySelector('input[name="qobuzPassword"]').value
+          }
+        }
+
         try {
           const response = await fetch('/download', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ urls, onlyAudio, ignorePlaylists, videoQuality })
+            body: JSON.stringify(params)
           })
 
           if (!response.ok) {
