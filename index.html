@@ -6,36 +6,59 @@
 
     <title>Media Downloader</title>
 
-    <!-- Bootstrap core CSS -->
-    <link href="https://getbootstrap.com/docs/4.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/bootstrap.min.css" rel="stylesheet">
+
+    <style type="text/css">
+      #logo {
+          transition: transform 1s;
+          transition-delay: 1s;
+          max-width: 100%;
+          margin-bottom: 10px;
+      }
+      #logo:hover {
+        transform: rotate(360deg);
+      }
+      #list {
+        margin-top: 30px;
+      }
+      main {
+        width: 700px;
+        margin: auto;
+        margin-top: 20px;
+        max-width: 95%;
+      }
+      .separator {
+        margin: 0px 10px;
+      }
+    </style>
   </head>
 
-  <body class="text-center">
-    <div class="form-signin" style="width: 700px; margin: auto; margin-top: 20px; max-width: 95%;">
-      <img height="150" src="logo_w300.jpeg" style="max-width: 100%; margin-bottom: 10px;">
+  <body>
+    <main class="text-center">
+      <img height="150" src="/logo_w300.jpeg" id="logo">
       <label for="inputUrls" class="sr-only">Media page Url(s)</label>
       <textarea id="inputUrls" name="urls" class="form-control" placeholder="Media page Url(s)" required autofocus></textarea>
       <div class="checkbox mb-3 mt-2">
-
           <label><input type="checkbox" name="ignorePlaylists" value="true" checked /> Ignore Playlists</label>
-          <span style="margin: 0px 10px;">|</span> <label>Video Quality <select name="videoQuality">
-            <option value="best">Best</option>
-            <option value="fhd" selected>Full HD</option>
+          <span class="separator">|</span>
+          <label>Video Quality <select name="videoQuality">
+            <option value="best" selected>Best</option>
+            <option value="fhd">Full HD</option>
             <option value="hd">HD</option>
           </select></label>
-          <span style="margin: 0px 10px;">|</span>
+          <span class="separator">|</span>
           <label><input type="checkbox" name="onlyAudio" value="true" /> Only audio</label>
           <fieldset id="qobuz-opts" class="d-none">
             <legend>Qobuz :</legend>
             <label>Sound Quality <select name="qobuzSoundQuality">
               <option value="5">MP3</option>
-              <option value="6" selected>CD</option>
+              <option value="6">CD</option>
               <option value="7">Hi-Res Max 96</option>
-              <option value="27">Hi-Res Max 192</option>
+              <option value="27" selected>Hi-Res Max 192</option>
             </select></label>
             <br/>
             <label>Email <input type="input" name="qobuzEmail" value="" /></label>
-            <span style="margin: 0px 10px;">|</span>
+            <span class="separator">|</span>
             <label>Password <input type="password" name="qobuzPassword" value="" /></label>
 
           </fieldset>
@@ -43,12 +66,12 @@
       </div>
       <button class="btn btn-lg btn-primary btn-block" id="submit" disabled>Download</button>
 
-      <div id="list" style="margin-top: 30px">
+      <div id="list">
         <table style="display: none" class="table">
           <tr><th>Urls</th><th>Status</th><th>Actions</th></tr>
         </table>
       </div>
-    </div>
+    </main>
 
     <script type="text/javascript">
       // Sorry, I did random code and I don't really not what I do
@@ -56,7 +79,8 @@
       const textarea = document.querySelector('#inputUrls')
       const submitEl = document.querySelector('#submit')
       const scrollOffsetDiff = Math.abs(textarea.scrollHeight - textarea.offsetHeight)
-      textarea.style.minHeight = textarea.offsetHeight + 'px'
+      const initialHeight = textarea.offsetHeight
+      textarea.style.minHeight = initialHeight + 'px'
 
       document.querySelector('input[name="onlyAudio"]').onchange = function() {
         document.querySelector('select[name="videoQuality"]').disabled = this.checked
@@ -64,15 +88,18 @@
 
       const qobuzFieldset = document.querySelector('#qobuz-opts')
 
-      textarea.oninput = () => {
+      function onTextareaChange() {
         submitEl.disabled = !textarea.value.trim()
         if (textarea.value.includes('qobuz.com')) {
           qobuzFieldset.classList.remove('d-none')
         } else {
           qobuzFieldset.classList.add('d-none')
         }
+        textarea.style.height = initialHeight + 'px'
         textarea.style.height = (textarea.scrollHeight + scrollOffsetDiff) + 'px'
       }
+
+      textarea.oninput = onTextareaChange
 
       async function refreshList() {
         const response = await fetch('/downloads')
@@ -115,6 +142,7 @@
             actions.append(cancelAction)
             cancelAction.style.marginTop = '5px'
             cancelAction.classList.add('btn')
+            cancelAction.classList.add('btn-warning')
 
             cancelAction.onclick = async () => {
               await fetch('/cancel/' + download.uid)
@@ -151,13 +179,14 @@
       refreshList()
 
       function resetSubmitable() {
-        document.querySelector('#inputUrls').value = ''
+        textarea.value = ''
+        onTextareaChange()
       }
 
       setInterval(refreshList, 1000 * 10)
 
       submitEl.onclick = async function () {
-        const urls = document.querySelector('#inputUrls').value.split('\n').map(v => v.trim()).filter(v => v)
+        const urls = textarea.value.trim().split('\n').map(v => v.trim()).filter(v => v)
         const onlyAudio = document.querySelector('input[name="onlyAudio"]').checked
         const ignorePlaylists = document.querySelector('input[name="ignorePlaylists"]').checked
         const videoQuality = document.querySelector('select[name="videoQuality"]').value
