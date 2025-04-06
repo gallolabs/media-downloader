@@ -1,6 +1,6 @@
 FROM node:lts-alpine3.21
 
-RUN echo 'try to break cache in my sucking NAS :('
+RUN echo 'try to break cache in my sucking NAS :(' > /tmp/message
 
 RUN apk add --no-cache tzdata ffmpeg supervisor && wget -O /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 
