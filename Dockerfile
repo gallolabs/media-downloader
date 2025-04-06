@@ -1,8 +1,6 @@
 FROM node:lts-alpine3.21
 
-RUN apk add --no-cache tzdata ffmpeg supervisor && wget -O /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && chmod +x /usr/local/bin/yt-dlp
-
-RUN apk add --no-cache py3-pip mutagen
+RUN apk add --no-cache tzdata ffmpeg supervisor py3-pip mutagen && wget -O /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp && chmod +x /usr/local/bin/yt-dlp
 
 RUN python3 -m pip install qobuz-dl --break-system-packages
 
