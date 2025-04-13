@@ -8,13 +8,13 @@ WORKDIR /app
 
 ADD package.json package-lock.json ./
 
-RUN npm i
+RUN npm i && cp node_modules/bootstrap/dist/css/bootstrap.min.css .
 
 ADD src tsconfig.json ./
 
 RUN npx tsc
 
-ADD src/index.html logo_w300.jpeg src/qobuz.py node_modules/bootstrap/dist/css/bootstrap.min.css ./
+ADD src/index.html logo_w300.jpeg src/qobuz.py ./
 
 COPY src/supervisord.conf /etc/supervisor.d/supervisord.ini
 
